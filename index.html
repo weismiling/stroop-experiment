@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ストループ課題</title>
+    <script src="https://unpkg.com/jspsych@7.3.0"></script>
+    <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+    <link
+      href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: sans-serif;
+        text-align: center;
+        margin: 100px auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="jspsych-target"></div>
+    <script>
+      const timeline = [];
+
+      const instructions = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<p>スペースキーを押すと開始します</p>",
+        choices: [" "],
+      };
+      timeline.push(instructions);
+
+      const stroop_stimuli = [
+        { stimulus: "<p style='color:red'>赤</p>", correct_response: "r" },
+        { stimulus: "<p style='color:blue'>赤</p>", correct_response: "b" },
+        { stimulus: "<p style='color:green'>青</p>", correct_response: "g" },
+        { stimulus: "<p style='color:yellow'>青</p>", correct_response: "y" },
+        // 必要なら追加
+      ];
+
+      const test = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function () {
+          return jsPsych.timelineVariable("stimulus");
+        },
+        choices: ["r", "g", "b", "y"],
+        data: {
+          task: "stroop",
+          correct_response: jsPsych.timelineVariable("correct_response"),
+        },
+        on_finish: function (data) {
+          data.correct = data.response === data.correct_response;
+        },
+      };
+
+      timeline.push({
+        timeline: [test],
+        timeline_variables: stroop_stimuli,
+        randomize_order: true,
+      });
+
+      // 結果送信処理
+      const send_data = {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: "<p>送信中…</p>",
+        choices: "NO_KEYS",
+        on_start: function () {
+          const payload = jsPsych.data.get().json();
+          fetch("https://script.google.com/macros/s/【ここにあなたのURL】/exec", {
+            method: "POST",
+            body: payload,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+            .then((res) => res.text())
+            .then((text) => {
+              document.body.innerHTML = "<p>データ送信完了！ありがとうございました。</p>";
+              console.log("送信成功:", text);
+            })
+            .catch((err) => {
+              document.body.innerHTML = "<p>送信失敗！</p>";
+              console.error("送信エラー:", err);
+            });
+        },
+      };
+      timeline.push(send_data);
+
+      jsPsych.init({
+        timeline: timeline,
+        display_element: "jspsych-target",
+      });
+    </script>
+  </body>
+</html>
