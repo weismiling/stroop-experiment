@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <title>ストループ課題</title>
+
+    <!-- jsPsych 7.x のCDN読み込み -->
     <script src="https://unpkg.com/jspsych@7.3.0"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
-    <link
-      href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css"
-      rel="stylesheet"
-    />
+    <link href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css" rel="stylesheet" />
+
     <style>
       body {
         font-family: sans-serif;
@@ -17,35 +17,41 @@
       }
     </style>
   </head>
+
   <body>
     <div id="jspsych-target"></div>
+
     <script>
       const timeline = [];
 
+      // 説明スライド
       const instructions = {
         type: jsPsychHtmlKeyboardResponse,
-        stimulus: "<p>スペースキーを押すと開始します</p>",
+        stimulus: "<p>ストループ課題です。<br>スペースキーを押して開始してください。</p>",
         choices: [" "],
       };
       timeline.push(instructions);
 
+      // 刺激セット
       const stroop_stimuli = [
         { stimulus: "<p style='color:red'>赤</p>", correct_response: "r" },
         { stimulus: "<p style='color:blue'>赤</p>", correct_response: "b" },
         { stimulus: "<p style='color:green'>青</p>", correct_response: "g" },
         { stimulus: "<p style='color:yellow'>青</p>", correct_response: "y" },
-        // 必要なら追加
+        { stimulus: "<p style='color:red'>青</p>", correct_response: "r" },
+        { stimulus: "<p style='color:green'>赤</p>", correct_response: "g" },
       ];
 
+      // 課題部分
       const test = {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: function () {
-          return jsPsych.timelineVariable("stimulus");
+          return jsPsych.timelineVariable("stimulus", true);
         },
         choices: ["r", "g", "b", "y"],
         data: {
           task: "stroop",
-          correct_response: jsPsych.timelineVariable("correct_response"),
+          correct_response: jsPsych.timelineVariable("correct_response", true),
         },
         on_finish: function (data) {
           data.correct = data.response === data.correct_response;
@@ -58,14 +64,14 @@
         randomize_order: true,
       });
 
-      // 結果送信処理
+      // データ送信（Google Apps Script）
       const send_data = {
         type: jsPsychHtmlKeyboardResponse,
-        stimulus: "<p>送信中…</p>",
+        stimulus: "<p>データを送信中です…</p>",
         choices: "NO_KEYS",
         on_start: function () {
           const payload = jsPsych.data.get().json();
-          fetch("https://script.google.com/macros/s/【ここにあなたのURL】/exec", {
+          fetch("https://script.google.com/macros/s/【あなたのAppsScriptURL】/exec", {
             method: "POST",
             body: payload,
             headers: {
@@ -74,17 +80,18 @@
           })
             .then((res) => res.text())
             .then((text) => {
-              document.body.innerHTML = "<p>データ送信完了！ありがとうございました。</p>";
+              document.body.innerHTML = "<p>送信が完了しました！<br>ご協力ありがとうございました。</p>";
               console.log("送信成功:", text);
             })
             .catch((err) => {
-              document.body.innerHTML = "<p>送信失敗！</p>";
+              document.body.innerHTML = "<p>送信に失敗しました。</p>";
               console.error("送信エラー:", err);
             });
         },
       };
       timeline.push(send_data);
 
+      // 実験開始
       jsPsych.init({
         timeline: timeline,
         display_element: "jspsych-target",
