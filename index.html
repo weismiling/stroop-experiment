@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <title>ストループ課題</title>
 
-    <!-- jsPsych 7.x のCDN読み込み -->
+    <!-- jsPsych CDN -->
     <script src="https://unpkg.com/jspsych@7.3.0"></script>
     <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
     <link href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css" rel="stylesheet" />
@@ -24,7 +24,6 @@
     <script>
       const timeline = [];
 
-      // 説明スライド
       const instructions = {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: "<p>ストループ課題です。<br>スペースキーを押して開始してください。</p>",
@@ -32,7 +31,6 @@
       };
       timeline.push(instructions);
 
-      // 刺激セット
       const stroop_stimuli = [
         { stimulus: "<p style='color:red'>赤</p>", correct_response: "r" },
         { stimulus: "<p style='color:blue'>赤</p>", correct_response: "b" },
@@ -42,7 +40,6 @@
         { stimulus: "<p style='color:green'>赤</p>", correct_response: "g" },
       ];
 
-      // 課題部分
       const test = {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: function () {
@@ -64,7 +61,6 @@
         randomize_order: true,
       });
 
-      // データ送信（Google Apps Script）
       const send_data = {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: "<p>データを送信中です…</p>",
@@ -89,9 +85,9 @@
             });
         },
       };
+
       timeline.push(send_data);
 
-      // 実験開始
       jsPsych.init({
         timeline: timeline,
         display_element: "jspsych-target",
