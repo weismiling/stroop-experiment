@@ -1,1 +1,140 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Stroop Task</title>
+  <script src="https://unpkg.com/jspsych@7.3.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js"></script>
+  <link href="https://unpkg.com/jspsych@7.3.0/css/jspsych.css" rel="stylesheet" />
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+    }
+    .jspsych-btn {
+      font-size: 20px;
+      margin: 10px;
+      padding: 10px 20px;
+    }
+  </style>
+</head>
+<body></body>
+<script>
+  // Firebase 配置信息（请替换为你自己的 Firebase 配置）
+  const firebaseConfig = {
+  apiKey: "AIzaSyDnZtQ02sSWCajHWkAgoik1JEIUfxP011A",
+  authDomain: "github-survey.firebaseapp.com",
+  databaseURL: "https://github-survey-default-rtdb.firebaseio.com",
+  projectId: "github-survey",
+  storageBucket: "github-survey.firebasestorage.app",
+  messagingSenderId: "736836641989",
+  appId: "1:736836641989:web:5fab88b6fc1dd0f519fcac"
 
+  };
+
+  // 初始化 Firebase
+  const app = firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  // 从 URL 获取实验参数
+  const urlParams = new URLSearchParams(window.location.search);
+  const pattern = urlParams.get("pattern") || "1";
+  const nTrials = parseInt(urlParams.get("nTrials")) || 30;
+
+  const colors = ["赤", "青", "緑", "黄"];
+  const colorHex = {
+    "赤": "red",
+    "青": "blue",
+    "緑": "green",
+    "黄": "gold"
+  };
+
+  function generateTrials(pattern, nTrials) {
+    const trials = [];
+    for (let i = 0; i < nTrials; i++) {
+      const word = colors[Math.floor(Math.random() * colors.length)];
+      let color;
+
+      if (pattern === "1") {
+        color = colorHex[word];
+      } else if (pattern === "2") {
+        const otherColors = colors.filter(c => c !== word);
+        const other = otherColors[Math.floor(Math.random() * otherColors.length)];
+        color = colorHex[other];
+      } else {
+        const rand = colors[Math.floor(Math.random() * colors.length)];
+        color = colorHex[rand];
+      }
+
+      trials.push({ word: word, color: color });
+    }
+    return trials;
+  }
+
+  const trialList = generateTrials(pattern, nTrials);
+
+  const timeline = [];
+
+  trialList.forEach((trial) => {
+    timeline.push({
+      type: jsPsychHtmlButtonResponse,
+      stimulus: `<p style="font-size:48px; color:${trial.color};">${trial.word}</p>`,
+      choices: colors,
+      data: {
+        correct_word: trial.word,
+        correct_color: trial.color
+      },
+      on_finish: function(data) {
+        const selectedColor = data.response;
+        const selectedHex = colorHex[selectedColor];
+        data.correct = selectedHex === data.correct_color;
+      }
+    });
+  });
+
+  timeline.push({
+    type: jsPsychHtmlKeyboardResponse,
+    stimulus: function() {
+      const trials = jsPsych.data.get().filter({ trial_type: 'html-button-response' });
+      const correct = trials.filter({ correct: true }).count();
+      const rt = trials.select('rt').mean().toFixed(0);
+      const total = trials.count();
+      const accuracy = ((correct / total) * 100).toFixed(1);
+
+      // 存储结果到 Firebase Firestore
+      const resultData = {
+        total_trials: total,
+        correct_trials: correct,
+        accuracy: accuracy,
+        average_rt: rt,
+        timestamp: new Date().toISOString()
+      };
+
+      // 将结果保存到 Firestore
+      db.collection("stroop_results").add(resultData)
+        .then((docRef) => {
+          console.log("Document written with ID: ", docRef.id);
+        })
+        .catch((error) => {
+          console.error("Error adding document: ", error);
+        });
+
+      return `<h2>実験終了！</h2>
+              <p>試行数：${total}</p>
+              <p>正解数：${correct}</p>
+              <p>正解率：${accuracy}%</p>
+              <p>平均反応時間：${rt} ms</p>
+              <p>ありがとうございました。</p>
+              <p>Enterキーで終了</p>`;
+    },
+    choices: ["Enter"]
+  });
+
+  jsPsych.init({
+    timeline: timeline
+  });
+</script>
+</html>
