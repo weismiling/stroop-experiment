@@ -141,29 +141,7 @@
                 練習試行は${nPractice}試行です。</p>`,
         };
 
-        const stroop_practice_instruction = {
-            type: 'html-button-response',
-            choices: ['次へ'],
-            stimulus: `<p>この課題では、5つの文字列（あか、あお、きいろ、みどり、くろ）に対して、その文字列と一致しない色がついた刺激が呈示されます。</p>
-                <p>言葉に惑わされないようにして、インクの色を選択してください。</p>
-                <p>「色の名前」をクリックして回答します。</p>
-                <p>まずは練習試行を始めます。</p>
-                <p>練習試行ではあなたの回答が正しかったかどうかについてのフィードバックがあります。<br>
-                練習試行は${nPractice}試行です。</p>`,
-        };
-
-        // 統制条件とストループ条件が混ざっている
-        const combined_practice_instruction = {
-            type: 'html-button-response',
-            choices: ['次へ'],
-            stimulus: `<p>この課題では、言葉に惑わされないようにして、文字列に着色されたインクの色を選択してください。
-                <br>「色の名前」をクリックして回答します。</p>
-                <p>まずは練習試行を始めます。</p>
-                <p>練習試行ではあなたの回答が正しかったかどうかについてのフィードバックがあります。<br>
-                練習試行は${nPractice}試行です。</p>`,
-        };
-
-        const start_message = {
+            const start_message = {
             type: 'html-button-response',
             choices: ['次へ'],
             stimulus: function(){
@@ -334,25 +312,7 @@
                 experiment.push(start_message);
                 experiment.push({timeline: makeStimSet(stroop_set, nTrials, 4, 0)});
                 break; // 忘れずに！
-            case 2: // ストループ　→　統制条件
-                experiment.push(stroop_practice_instruction);
-                experiment.push({timeline: makeStimSet(stroop_set, nPractice, 3, 1)});
-                experiment.push(start_message);
-                experiment.push({timeline: makeStimSet(stroop_set, nTrials, 4, 0)});
-                experiment.push(control_practice_instruction);
-                experiment.push({timeline: makeStimSet(control_set, nPractice, 1, 1)});
-                experiment.push(start_message);
-                experiment.push({timeline: makeStimSet(control_set, nTrials, 2, 0)});
-                break; // 忘れずに！
-            case 3: // ランダム
-                experiment.push(combined_practice_instruction);
-                const combined_practice_set = makeCombinedSet(nPractice);
-                experiment.push({timeline: makeStimSet(combined_practice_set, nPractice, 5, 1)});
-                experiment.push(start_message);
-                const combined_exp_set = makeCombinedSet(nTrials);
-                experiment.push({timeline: makeStimSet(combined_exp_set, nTrials, 6, 0)});
-                break;
-        }
+                  }
 
         const end_message = {
             type: 'html-button-response',
