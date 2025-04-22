@@ -1,121 +1,137 @@
-<script type="module">
-  // Import Firebase SDK (you don't need to include a CDN link for Firebase SDK as a script)
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-  import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>Stroop Task</title>
+  <script src="https://unpkg.com/jspsych@7.3.0"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
+  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
+  <script type="module">
+    // Firebase SDK モジュールをインポート
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
-  // Firebase configuration (replace with your actual Firebase config)
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",  
-    authDomain: "YOUR_AUTH_DOMAIN",  
-    projectId: "YOUR_PROJECT_ID",  
-    storageBucket: "YOUR_STORAGE_BUCKET",  
-    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",  
-    appId: "YOUR_APP_ID"
-  };
+    // Firebase 設定（自分の Firebase 設定に置き換えてください）
+    const firebaseConfig = {
+  apiKey: "AIzaSyDnZtQ02sSWCajHWkAgoik1JEIUfxP011A",
+  authDomain: "github-survey.firebaseapp.com",
+  databaseURL: "https://github-survey-default-rtdb.firebaseio.com",
+  projectId: "github-survey",
+  storageBucket: "github-survey.firebasestorage.app",
+  messagingSenderId: "736836641989",
+  appId: "1:736836641989:web:5fab88b6fc1dd0f519fcac"
+    };
 
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    // Firebase 初期化
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  // Use Firestore to save data (example)
-  // You can put this within your jsPsych on_finish function to save data
-  async function saveToFirestore(resultData) {
-    try {
-      const docRef = await addDoc(collection(db, "stroop_results"), resultData);
-      console.log("Document written with ID: ", docRef.id);
-    } catch (error) {
-      console.error("Error adding document: ", error);
-    }
-  }
-
-  // This part is where you initialize and run jsPsych experiments
-  const urlParams = new URLSearchParams(window.location.search);
-  const pattern = urlParams.get("pattern") || "1";
-  const nTrials = parseInt(urlParams.get("nTrials")) || 30;
-
-  const colors = ["赤", "青", "緑", "黄"];
-  const colorHex = {
-    "赤": "red",
-    "青": "blue",
-    "緑": "green",
-    "黄": "gold"
-  };
-
-  function generateTrials(pattern, nTrials) {
-    const trials = [];
-    for (let i = 0; i < nTrials; i++) {
-      const word = colors[Math.floor(Math.random() * colors.length)];
-      let color;
-
-      if (pattern === "1") {
-        color = colorHex[word];
-      } else if (pattern === "2") {
-        const otherColors = colors.filter(c => c !== word);
-        const other = otherColors[Math.floor(Math.random() * otherColors.length)];
-        color = colorHex[other];
-      } else {
-        const rand = colors[Math.floor(Math.random() * colors.length)];
-        color = colorHex[rand];
+    // Firestore にデータを保存する関数
+    async function saveToFirestore(resultData) {
+      try {
+        const docRef = await addDoc(collection(db, "stroop_results"), resultData);
+        console.log("Document written with ID: ", docRef.id);
+      } catch (error) {
+        console.error("Error adding document: ", error);
       }
-
-      trials.push({ word: word, color: color });
     }
-    return trials;
-  }
 
-  const trialList = generateTrials(pattern, nTrials);
+    // URL パラメータを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const pattern = urlParams.get("pattern") || "1";
+    const nTrials = parseInt(urlParams.get("nTrials")) || 30;
 
-  const timeline = [];
+    // 色とその色名の対応
+    const colors = ["赤", "青", "緑", "黄"];
+    const colorHex = {
+      "赤": "red",
+      "青": "blue",
+      "緑": "green",
+      "黄": "gold"
+    };
 
-  trialList.forEach((trial) => {
-    timeline.push({
-      type: jsPsychHtmlButtonResponse,
-      stimulus: `<p style="font-size:48px; color:${trial.color};">${trial.word}</p>`,
-      choices: colors,
-      data: {
-        correct_word: trial.word,
-        correct_color: trial.color
-      },
-      on_finish: function(data) {
-        const selectedColor = data.response;
-        const selectedHex = colorHex[selectedColor];
-        data.correct = selectedHex === data.correct_color;
+    // 試行を生成する関数
+    function generateTrials(pattern, nTrials) {
+      const trials = [];
+      for (let i = 0; i < nTrials; i++) {
+        const word = colors[Math.floor(Math.random() * colors.length)];
+        let color;
+
+        if (pattern === "1") {
+          color = colorHex[word];
+        } else if (pattern === "2") {
+          const otherColors = colors.filter(c => c !== word);
+          const other = otherColors[Math.floor(Math.random() * otherColors.length)];
+          color = colorHex[other];
+        } else {
+          const rand = colors[Math.floor(Math.random() * colors.length)];
+          color = colorHex[rand];
+        }
+
+        trials.push({ word: word, color: color });
       }
+      return trials;
+    }
+
+    const trialList = generateTrials(pattern, nTrials);
+
+    const timeline = [];
+
+    // 試行の設定
+    trialList.forEach((trial) => {
+      timeline.push({
+        type: jsPsychHtmlButtonResponse,
+        stimulus: `<p style="font-size:48px; color:${trial.color};">${trial.word}</p>`,
+        choices: colors,
+        data: {
+          correct_word: trial.word,
+          correct_color: trial.color
+        },
+        on_finish: function(data) {
+          const selectedColor = data.response;
+          const selectedHex = colorHex[selectedColor];
+          data.correct = selectedHex === data.correct_color;
+        }
+      });
     });
-  });
 
-  timeline.push({
-    type: jsPsychHtmlKeyboardResponse,
-    stimulus: function() {
-      const trials = jsPsych.data.get().filter({ trial_type: 'html-button-response' });
-      const correct = trials.filter({ correct: true }).count();
-      const rt = trials.select('rt').mean().toFixed(0);
-      const total = trials.count();
-      const accuracy = ((correct / total) * 100).toFixed(1);
+    // 実験終了時の結果表示と Firestore 保存
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        const trials = jsPsych.data.get().filter({ trial_type: 'html-button-response' });
+        const correct = trials.filter({ correct: true }).count();
+        const rt = trials.select('rt').mean().toFixed(0);
+        const total = trials.count();
+        const accuracy = ((correct / total) * 100).toFixed(1);
 
-      // 存储结果到 Firebase Firestore
-      const resultData = {
-        total_trials: total,
-        correct_trials: correct,
-        accuracy: accuracy,
-        average_rt: rt,
-        timestamp: new Date().toISOString()
-      };
+        // 実験結果を Firestore に保存
+        const resultData = {
+          total_trials: total,
+          correct_trials: correct,
+          accuracy: accuracy,
+          average_rt: rt,
+          timestamp: new Date().toISOString()
+        };
 
-      saveToFirestore(resultData);  // Save to Firestore
+        saveToFirestore(resultData);  // Firestore に保存
 
-      return `<h2>実験終了！</h2>
-              <p>試行数：${total}</p>
-              <p>正解数：${correct}</p>
-              <p>正解率：${accuracy}%</p>
-              <p>平均反応時間：${rt} ms</p>
-              <p>ありがとうございました。</p>
-              <p>Enterキーで終了</p>`;
-    },
-    choices: ["Enter"]
-  });
+        return `<h2>実験終了！</h2>
+                <p>試行数：${total}</p>
+                <p>正解数：${correct}</p>
+                <p>正解率：${accuracy}%</p>
+                <p>平均反応時間：${rt} ms</p>
+                <p>ありがとうございました。</p>
+                <p>Enterキーで終了</p>`;
+      },
+      choices: ["Enter"]
+    });
 
-  jsPsych.init({
-    timeline: timeline
-  });
-</script>
+    // jsPsych 実行
+    jsPsych.init({
+      timeline: timeline
+    });
+  </script>
+</head>
+<body></body>
+</html>
