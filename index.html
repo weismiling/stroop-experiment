@@ -3,16 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <title>Stroop Task</title>
-  <script src="https://unpkg.com/jspsych@7.3.0"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2"></script>
-  <script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2"></script>
   <script type="module">
     // Firebase SDK モジュールをインポート
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
 
+    // jsPsychのモジュールをインポート
+    import jsPsych from "https://unpkg.com/jspsych@7.3.0/dist/jspsych.js";
+    import { HtmlButtonResponsePlugin } from "https://unpkg.com/@jspsych/plugin-html-button-response@1.1.2/index.js";
+    import { HtmlKeyboardResponsePlugin } from "https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.2/index.js";
+
     // Firebase 設定（自分の Firebase 設定に置き換えてください）
-    const firebaseConfig = {
+    
+  const firebaseConfig = {
   apiKey: "AIzaSyDnZtQ02sSWCajHWkAgoik1JEIUfxP011A",
   authDomain: "github-survey.firebaseapp.com",
   databaseURL: "https://github-survey-default-rtdb.firebaseio.com",
@@ -20,6 +23,7 @@
   storageBucket: "github-survey.firebasestorage.app",
   messagingSenderId: "736836641989",
   appId: "1:736836641989:web:5fab88b6fc1dd0f519fcac"
+    };
     };
 
     // Firebase 初期化
@@ -80,7 +84,7 @@
     // 試行の設定
     trialList.forEach((trial) => {
       timeline.push({
-        type: jsPsychHtmlButtonResponse,
+        type: HtmlButtonResponsePlugin,
         stimulus: `<p style="font-size:48px; color:${trial.color};">${trial.word}</p>`,
         choices: colors,
         data: {
@@ -97,7 +101,7 @@
 
     // 実験終了時の結果表示と Firestore 保存
     timeline.push({
-      type: jsPsychHtmlKeyboardResponse,
+      type: HtmlKeyboardResponsePlugin,
       stimulus: function() {
         const trials = jsPsych.data.get().filter({ trial_type: 'html-button-response' });
         const correct = trials.filter({ correct: true }).count();
